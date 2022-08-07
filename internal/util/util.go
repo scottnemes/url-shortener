@@ -32,7 +32,8 @@ func (c *Counter) GetAndIncrease() (uint64, uint64) {
 
 func (c *Counter) GetNewRange() (uint64, uint64) {
 	/*
-		TODO: query ZooKeeper to get next available counter range
+		TODO:
+		1. query ZooKeeper to get next available counter range
 	*/
 	c.Mu.Lock()
 	defer c.Mu.Unlock()

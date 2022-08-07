@@ -20,6 +20,11 @@ type Url struct {
 }
 
 func GetDBClient() *mongo.Client {
+	/*
+		TODO:
+		1. Setup database authentication
+	*/
+
 	// credentials := options.Credential{
 	// 	Username: db_user,
 	// 	Password: db_pass,

@@ -1,5 +1,10 @@
 package config
 
+/*
+	TODO:
+	1. Load configuration from file
+*/
+
 const (
 	ConfigDir    = "/etc/url-shortener"
 	CounterFile  = "/tmp/counter_range.dat"
