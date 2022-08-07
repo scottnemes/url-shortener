@@ -5,20 +5,11 @@ import (
 	"log"
 	"time"
 
+	"example.com/url-shortener/internal/config"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
-)
-
-const (
-	db_host        = "127.0.0.1"
-	db_port        = "27017"
-	db_user        = "mutiny"
-	db_pass        = "password123"
-	db_conn_string = "mongodb://" + db_host + ":" + db_port
-	db_database    = "short_urls"
-	db_collection  = "urls"
 )
 
 type Url struct {
@@ -38,7 +29,7 @@ func GetDBClient() *mongo.Client {
 	defer cancel()
 
 	//clientOptions := options.Client().ApplyURI(db_conn_string).SetAuth(credentials)
-	clientOptions := options.Client().ApplyURI(db_conn_string)
+	clientOptions := options.Client().ApplyURI(config.DBConnString)
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		panic(err)
@@ -56,7 +47,7 @@ func GetDBClient() *mongo.Client {
 }
 
 func InsertUrl(client *mongo.Client, url Url) error {
-	collection := client.Database(db_database).Collection(db_collection)
+	collection := client.Database(config.DBDatabase).Collection(config.DBCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -69,7 +60,7 @@ func InsertUrl(client *mongo.Client, url Url) error {
 }
 
 func GetTargetUrl(client *mongo.Client, slug string) (Url, error) {
-	collection := client.Database(db_database).Collection(db_collection)
+	collection := client.Database(config.DBDatabase).Collection(config.DBCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -93,7 +84,7 @@ func GetTargetUrl(client *mongo.Client, slug string) (Url, error) {
 }
 
 func UpdateUrlHits(client *mongo.Client, slug string) error {
-	collection := client.Database(db_database).Collection(db_collection)
+	collection := client.Database(config.DBDatabase).Collection(config.DBCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 

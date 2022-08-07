@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -11,25 +10,23 @@ import (
 	"syscall"
 	"time"
 
+	"example.com/url-shortener/internal/config"
 	"example.com/url-shortener/internal/model"
 	"example.com/url-shortener/internal/util"
 	"github.com/gin-gonic/gin"
 )
 
 func Start() {
-	configDir := "/etc/url-shortener"
-	counterFile := fmt.Sprintf("%v/counter_range.dat", configDir)
-
 	// if counterFile exists, used the saved range
 	// if not, get a new range
 	cnt := util.Counter{}
-	if util.FileExists(counterFile) {
-		cnt.Counter, cnt.CounterEnd = util.LoadCounterRange(counterFile)
+	if util.FileExists(config.CounterFile) {
+		cnt.Counter, cnt.CounterEnd = util.LoadCounterRange(config.CounterFile)
 	} else {
 		cnt.Counter, cnt.CounterEnd = cnt.GetNewRange()
 	}
 	// save counter range to file on non-fatal exit
-	defer util.SaveCounterRange(counterFile, &cnt)
+	defer util.SaveCounterRange(config.CounterFile, &cnt)
 
 	c := model.GetDBClient()
 	// close the database connection before exit
