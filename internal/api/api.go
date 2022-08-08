@@ -36,7 +36,13 @@ func Start() {
 		}
 	}()
 
+	if config.DebugMode {
+		gin.SetMode(gin.DebugMode)
+	} else {
+		gin.SetMode(gin.ReleaseMode)
+	}
 	router := gin.Default()
+	router.SetTrustedProxies(nil)
 
 	router.GET("/api/url", func(gc *gin.Context) {
 		json := model.Url{}

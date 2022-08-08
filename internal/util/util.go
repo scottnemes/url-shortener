@@ -46,7 +46,8 @@ func LoadCounterRange(fileName string) (uint64, uint64) {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	dataString := strings.Split(strings.TrimSuffix(string(data), "\n"), " ")
+	//dataString := strings.Split(strings.TrimSuffix(string(data), "\n"), " ")
+	dataString := strings.Split(string(data), " ")
 
 	counter, err := strconv.Atoi(dataString[0])
 	if err != nil {
