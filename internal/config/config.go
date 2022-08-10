@@ -10,6 +10,8 @@ const (
 	ConfigDir   = "/etc/url-shortener"
 	CounterFile = "/tmp/counter_range.dat"
 	DebugMode   = true
+	// Gin
+	GinPort = "8080"
 	// Database
 	dbHost       = "127.0.0.1"
 	dbPort       = "27017"
