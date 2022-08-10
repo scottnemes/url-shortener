@@ -58,7 +58,7 @@ func InsertUrl(client *mongo.Client, url Url) error {
 
 	_, err := collection.InsertOne(ctx, url)
 	if err != nil {
-		log.Println(err)
+		log.Printf("Error creating new short URL (slug: %v) (%v)", url.Slug, err)
 	}
 
 	return err

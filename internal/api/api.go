@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"example.com/url-shortener/internal/cache"
 	"example.com/url-shortener/internal/config"
 	"example.com/url-shortener/internal/model"
 	"example.com/url-shortener/internal/util"
@@ -36,6 +37,8 @@ func Start() {
 		}
 	}()
 
+	cacheClient := cache.GetCacheClient()
+
 	if config.DebugMode {
 		gin.SetMode(gin.DebugMode)
 	} else {
@@ -52,6 +55,15 @@ func Start() {
 			TODO:
 			1. Add error checking for slug
 		*/
+
+		// check if the URL is in the cache if enabled
+		url := cache.GetCachedUrl(cacheClient, slug)
+		if url.Target != "" {
+			gc.Redirect(http.StatusTemporaryRedirect, url.Target)
+			return
+		}
+
+		// if URL is not in cache or cache is disabled, check the database
 		url, err := model.GetTargetUrl(dbClient, slug)
 		if err != nil {
 			gc.Redirect(http.StatusTemporaryRedirect, "/")
@@ -67,14 +79,25 @@ func Start() {
 			})
 			return
 		}
-		target, err := model.GetTargetUrl(dbClient, json.Slug)
+
+		// check if the URL is in the cache if enabled
+		url := cache.GetCachedUrl(cacheClient, json.Slug)
+		if url.Target != "" {
+			gc.JSON(http.StatusOK, gin.H{
+				"target": url.Target,
+			})
+			return
+		}
+
+		// if URL is not in cache or cache is disabled, check the database
+		url, err := model.GetTargetUrl(dbClient, json.Slug)
 		if err != nil {
 			gc.JSON(http.StatusNotFound, gin.H{
 				"message": "Short URL not found.",
 			})
 		} else {
 			gc.JSON(http.StatusOK, gin.H{
-				"target": target.Target,
+				"target": url.Target,
 			})
 		}
 	})
@@ -107,12 +130,14 @@ func Start() {
 			gc.JSON(http.StatusBadRequest, gin.H{
 				"message": "Error creating new short URL entry.",
 			})
-		} else {
-			gc.JSON(http.StatusOK, gin.H{
-				"message": "New short URL created.",
-				"slug":    newUrl.Slug,
-			})
+			return
 		}
+
+		cache.SetCachedUrl(cacheClient, newUrl)
+		gc.JSON(http.StatusOK, gin.H{
+			"message": "New short URL created.",
+			"slug":    newUrl.Slug,
+		})
 	})
 
 	srv := &http.Server{

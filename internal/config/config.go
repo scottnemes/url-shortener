@@ -6,9 +6,11 @@ package config
 */
 
 const (
-	ConfigDir    = "/etc/url-shortener"
-	CounterFile  = "/tmp/counter_range.dat"
-	DebugMode    = true
+	// General
+	ConfigDir   = "/etc/url-shortener"
+	CounterFile = "/tmp/counter_range.dat"
+	DebugMode   = true
+	// Database
 	dbHost       = "127.0.0.1"
 	dbPort       = "27017"
 	dbUser       = "mutiny"
@@ -16,4 +18,10 @@ const (
 	DBConnString = "mongodb://" + dbHost + ":" + dbPort
 	DBDatabase   = "short_urls"
 	DBCollection = "urls"
+	// Cache
+	CacheEnabled = true
+	CacheHost    = "localhost"
+	CachePort    = "6379"
+	CachePass    = ""
+	CacheDB      = 0
 )
