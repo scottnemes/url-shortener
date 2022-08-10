@@ -28,10 +28,10 @@ func Start() {
 	// save counter range to file on non-fatal exit
 	defer util.SaveCounterRange(config.CounterFile, &cnt)
 
-	c := model.GetDBClient()
+	dbClient := model.GetDBClient()
 	// close the database connection before exit
 	defer func() {
-		if err := c.Disconnect(context.TODO()); err != nil {
+		if err := dbClient.Disconnect(context.TODO()); err != nil {
 			panic(err)
 		}
 	}()
@@ -44,6 +44,21 @@ func Start() {
 	router := gin.Default()
 	router.SetTrustedProxies(nil)
 
+	router.StaticFile("/favicon.ico", "./resources/favicon.ico")
+
+	router.GET(":slug", func(gc *gin.Context) {
+		slug := gc.Param("slug")
+		/*
+			TODO:
+			1. Add error checking for slug
+		*/
+		url, err := model.GetTargetUrl(dbClient, slug)
+		if err != nil {
+			gc.Redirect(http.StatusTemporaryRedirect, "/")
+		}
+		gc.Redirect(http.StatusTemporaryRedirect, url.Target)
+	})
+
 	router.GET("/api/url", func(gc *gin.Context) {
 		json := model.Url{}
 		if err := gc.ShouldBindJSON(&json); err != nil {
@@ -52,7 +67,7 @@ func Start() {
 			})
 			return
 		}
-		target, err := model.GetTargetUrl(c, json.Slug)
+		target, err := model.GetTargetUrl(dbClient, json.Slug)
 		if err != nil {
 			gc.JSON(http.StatusNotFound, gin.H{
 				"message": "Short URL not found.",
@@ -87,7 +102,7 @@ func Start() {
 			Hits:    1,
 		}
 
-		err := model.InsertUrl(c, newUrl)
+		err := model.InsertUrl(dbClient, newUrl)
 		if err != nil {
 			gc.JSON(http.StatusBadRequest, gin.H{
 				"message": "Error creating new short URL entry.",
