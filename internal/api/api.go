@@ -48,6 +48,7 @@ func Start() {
 	router := gin.Default()
 	router.SetTrustedProxies(nil)
 
+	// get target URL from slug
 	router.GET("/api/url", func(gc *gin.Context) {
 		json := model.Url{}
 		if err := gc.ShouldBindJSON(&json); err != nil {
@@ -79,6 +80,7 @@ func Start() {
 		}
 	})
 
+	// create new short URL
 	router.POST("/api/url", func(gc *gin.Context) {
 		json := model.Url{}
 		if err := gc.ShouldBindJSON(&json); err != nil {
@@ -115,6 +117,29 @@ func Start() {
 			"message": "New short URL created.",
 			"slug":    newUrl.Slug,
 		})
+	})
+
+	// delete short URL by slug
+	router.DELETE("/api/url", func(gc *gin.Context) {
+		json := model.Url{}
+		if err := gc.ShouldBindJSON(&json); err != nil {
+			gc.JSON(http.StatusBadRequest, gin.H{
+				"message": err.Error(),
+			})
+			return
+		}
+
+		cache.DeleteCachedUrl(cacheClient, json.Slug)
+		err := model.DeleteUrl(dbClient, json.Slug)
+		if err != nil {
+			gc.JSON(http.StatusNotFound, gin.H{
+				"message": "Short URL not found.",
+			})
+		} else {
+			gc.JSON(http.StatusOK, gin.H{
+				"message": "Short URL deleted.",
+			})
+		}
 	})
 
 	srv := &http.Server{

@@ -64,6 +64,22 @@ func InsertUrl(client *mongo.Client, url Url) error {
 	return err
 }
 
+func DeleteUrl(client *mongo.Client, slug string) error {
+	collection := client.Database(config.DBDatabase).Collection(config.DBCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err := collection.DeleteOne(
+		ctx,
+		bson.M{"slug": slug},
+	)
+	if err != nil {
+		log.Printf("Error deleting URL (slug: %v) (%v)", slug, err)
+	}
+
+	return err
+}
+
 func GetTargetUrl(client *mongo.Client, slug string) (Url, error) {
 	collection := client.Database(config.DBDatabase).Collection(config.DBCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -99,7 +115,7 @@ func UpdateUrlHits(client *mongo.Client, slug string) error {
 		bson.M{"$inc": bson.M{"hits": 1}},
 	)
 	if err != nil {
-		log.Println(err)
+		log.Printf("Error updating URL hits (slug: %v) (%v)", slug, err)
 	}
 
 	return err
