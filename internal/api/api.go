@@ -48,30 +48,6 @@ func Start() {
 	router := gin.Default()
 	router.SetTrustedProxies(nil)
 
-	router.StaticFile("/favicon.ico", "./resources/favicon.ico")
-
-	router.GET(":slug", func(gc *gin.Context) {
-		slug := gc.Param("slug")
-		/*
-			TODO:
-			1. Add error checking for slug
-		*/
-
-		// check if the URL is in the cache if enabled
-		url := cache.GetCachedUrl(cacheClient, slug)
-		if url.Target != "" {
-			gc.Redirect(http.StatusTemporaryRedirect, url.Target)
-			return
-		}
-
-		// if URL is not in cache or cache is disabled, check the database
-		url, err := model.GetTargetUrl(dbClient, slug)
-		if err != nil {
-			gc.Redirect(http.StatusTemporaryRedirect, "/")
-		}
-		gc.Redirect(http.StatusTemporaryRedirect, url.Target)
-	})
-
 	router.GET("/api/url", func(gc *gin.Context) {
 		json := model.Url{}
 		if err := gc.ShouldBindJSON(&json); err != nil {
@@ -146,32 +122,26 @@ func Start() {
 		Handler: router,
 	}
 
-	// Initializing the server in a goroutine so that
-	// it won't block the graceful shutdown handling below
+	// start server in goroutine to allow graceful shutdown
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
-			log.Printf("listen: %s\n", err)
+			log.Printf("Listen: %s\n", err)
 		}
 	}()
 
-	// Wait for interrupt signal to gracefully shutdown the server with
-	// a timeout of 5 seconds.
+	// wait for interrupt signal to gracefully shutdown the server
 	quit := make(chan os.Signal, 1)
-	// kill (no param) default send syscall.SIGTERM
-	// kill -2 is syscall.SIGINT
-	// kill -9 is syscall.SIGKILL but can't be caught, so don't need to add it
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 	log.Println("Shutting down server...")
 
-	// The context is used to inform the server it has 5 seconds to finish
-	// the request it is currently handling
+	// wait 5 seconds before shutting down the server
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatal("Server forced to shutdown:", err)
+		log.Fatalf("Error shutting down server (%v).", err)
 	}
 
-	log.Println("Server exiting")
+	log.Println("Server exiting.")
 }
