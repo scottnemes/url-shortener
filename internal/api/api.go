@@ -53,14 +53,16 @@ func Start() {
 		url := model.Url{}
 		if err := gc.ShouldBindJSON(&url); err != nil {
 			gc.JSON(http.StatusBadRequest, gin.H{
-				"message": err.Error(),
+				"status":  http.StatusBadRequest,
+				"message": "Error parsing URL for shortening.",
 			})
 			return
 		}
 
 		if url.Target == "" {
 			gc.JSON(http.StatusBadRequest, gin.H{
-				"message": "Error: missing target URL.",
+				"status":  http.StatusBadRequest,
+				"message": "Missing target URL for shortening.",
 			})
 			return
 		}
@@ -72,14 +74,16 @@ func Start() {
 		err := model.InsertUrl(dbClient, url)
 		if err != nil {
 			gc.JSON(http.StatusBadRequest, gin.H{
-				"message": "Error creating new short URL entry.",
+				"status":  http.StatusBadRequest,
+				"message": "Error creating new short URL.",
 			})
 			return
 		}
 
 		cache.SetCachedUrl(cacheClient, url)
 		gc.JSON(http.StatusOK, gin.H{
-			"message": "New short URL created.",
+			"status":  http.StatusOK,
+			"message": "success",
 			"urls":    url,
 		})
 	})
@@ -94,8 +98,9 @@ func Start() {
 		url := cache.GetCachedUrl(cacheClient, slug)
 		if url.Target != "" {
 			gc.JSON(http.StatusOK, gin.H{
-				"slug":   url.Slug,
-				"target": url.Target,
+				"status":  http.StatusOK,
+				"message": "success",
+				"urls":    url,
 			})
 			return
 		}
@@ -104,12 +109,14 @@ func Start() {
 		url, err := model.GetTargetUrl(dbClient, slug)
 		if err != nil {
 			gc.JSON(http.StatusNotFound, gin.H{
+				"status":  http.StatusNotFound,
 				"message": "Short URL not found.",
 			})
 		} else {
 			gc.JSON(http.StatusOK, gin.H{
-				"slug":   url.Slug,
-				"target": url.Target,
+				"status":  http.StatusOK,
+				"message": "success",
+				"urls":    url,
 			})
 		}
 	})
@@ -119,11 +126,14 @@ func Start() {
 		urls, err := model.GetUrls(dbClient)
 		if err != nil {
 			gc.JSON(http.StatusNotFound, gin.H{
+				"status":  http.StatusNotFound,
 				"message": "Error retrieving all URLs.",
 			})
 		} else {
 			gc.JSON(http.StatusOK, gin.H{
-				"urls": urls,
+				"status":  http.StatusOK,
+				"message": "success",
+				"urls":    urls,
 			})
 		}
 	})
@@ -134,14 +144,16 @@ func Start() {
 		url := model.Url{}
 		if err := gc.ShouldBindJSON(&url); err != nil {
 			gc.JSON(http.StatusBadRequest, gin.H{
-				"message": err.Error(),
+				"status":  http.StatusBadRequest,
+				"message": "Error parsing URL for updating.",
 			})
 			return
 		}
 
 		if url.Target == "" {
 			gc.JSON(http.StatusBadRequest, gin.H{
-				"message": "Error: missing target URL.",
+				"status":  http.StatusBadRequest,
+				"message": "Missing target URL for updating.",
 			})
 			return
 		}
@@ -153,16 +165,17 @@ func Start() {
 		err := model.UpdateUrl(dbClient, url)
 		if err != nil {
 			gc.JSON(http.StatusBadRequest, gin.H{
-				"message": "Error updating URL entry.",
+				"status":  http.StatusBadRequest,
+				"message": "Error updating URL record.",
 			})
 			return
 		}
 
 		cache.SetCachedUrl(cacheClient, url)
 		gc.JSON(http.StatusOK, gin.H{
-			"message": "Short URL updated.",
-			"slug":    url.Slug,
-			"target":  url.Target,
+			"status":  http.StatusOK,
+			"message": "success",
+			"urls":    url,
 		})
 	})
 
@@ -177,11 +190,13 @@ func Start() {
 		err := model.DeleteUrl(dbClient, slug)
 		if err != nil {
 			gc.JSON(http.StatusNotFound, gin.H{
+				"status":  http.StatusNotFound,
 				"message": "Short URL not found.",
 			})
 		} else {
 			gc.JSON(http.StatusOK, gin.H{
-				"message": "Short URL deleted.",
+				"status":  http.StatusOK,
+				"message": "success",
 			})
 		}
 	})
