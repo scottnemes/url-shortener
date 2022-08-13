@@ -172,6 +172,15 @@ func Start() {
 		url.Created = uint64(time.Now().Unix())
 		url.Hits = 1
 
+		// update record in cache if it exists
+		cache.SetCachedUrl(cacheClient, url)
+		gc.JSON(http.StatusOK, gin.H{
+			"status":  http.StatusOK,
+			"message": "success",
+			"urls":    url,
+		})
+
+		// update record in database
 		err := model.UpdateUrl(dbClient, url)
 		if err != nil {
 			gc.JSON(http.StatusBadRequest, gin.H{
@@ -180,13 +189,6 @@ func Start() {
 			})
 			return
 		}
-
-		cache.SetCachedUrl(cacheClient, url)
-		gc.JSON(http.StatusOK, gin.H{
-			"status":  http.StatusOK,
-			"message": "success",
-			"urls":    url,
-		})
 	})
 
 	// delete short URL by slug
