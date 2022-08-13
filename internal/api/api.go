@@ -49,17 +49,13 @@ func Start() {
 	router.SetTrustedProxies(nil)
 
 	// get target URL from slug
-	router.GET("/api/url", func(gc *gin.Context) {
-		json := model.Url{}
-		if err := gc.ShouldBindJSON(&json); err != nil {
-			gc.JSON(http.StatusBadRequest, gin.H{
-				"message": err.Error(),
-			})
-			return
-		}
+	router.GET("/urls/:slug", func(gc *gin.Context) {
+		slug := gc.Param("slug")
 
-		// check if the URL is in the cache if enabled
-		url := cache.GetCachedUrl(cacheClient, json.Slug)
+		// check cache (if enabled) for the provided slug
+		// if found, return
+		// if not found, continue on to check the database
+		url := cache.GetCachedUrl(cacheClient, slug)
 		if url.Target != "" {
 			gc.JSON(http.StatusOK, gin.H{
 				"target": url.Target,
@@ -67,8 +63,8 @@ func Start() {
 			return
 		}
 
-		// if URL is not in cache or cache is disabled, check the database
-		url, err := model.GetTargetUrl(dbClient, json.Slug)
+		// check database for the provided slug
+		url, err := model.GetTargetUrl(dbClient, slug)
 		if err != nil {
 			gc.JSON(http.StatusNotFound, gin.H{
 				"message": "Short URL not found.",
@@ -81,7 +77,7 @@ func Start() {
 	})
 
 	// create new short URL
-	router.POST("/api/url", func(gc *gin.Context) {
+	router.POST("/urls", func(gc *gin.Context) {
 		json := model.Url{}
 		if err := gc.ShouldBindJSON(&json); err != nil {
 			gc.JSON(http.StatusBadRequest, gin.H{
@@ -120,17 +116,14 @@ func Start() {
 	})
 
 	// delete short URL by slug
-	router.DELETE("/api/url", func(gc *gin.Context) {
-		json := model.Url{}
-		if err := gc.ShouldBindJSON(&json); err != nil {
-			gc.JSON(http.StatusBadRequest, gin.H{
-				"message": err.Error(),
-			})
-			return
-		}
+	router.DELETE("/urls/:slug", func(gc *gin.Context) {
+		slug := gc.Param("slug")
 
-		cache.DeleteCachedUrl(cacheClient, json.Slug)
-		err := model.DeleteUrl(dbClient, json.Slug)
+		// delete URL from cache (if enabled)
+		cache.DeleteCachedUrl(cacheClient, slug)
+
+		// delete URL from database
+		err := model.DeleteUrl(dbClient, slug)
 		if err != nil {
 			gc.JSON(http.StatusNotFound, gin.H{
 				"message": "Short URL not found.",

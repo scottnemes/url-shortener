@@ -37,6 +37,10 @@ func GetCachedUrl(client *redis.Client, slug string) model.Url {
 }
 
 func SetCachedUrl(client *redis.Client, url model.Url) {
+	// short circuit if cache is disabled
+	if config.CacheEnabled != true {
+		return
+	}
 	err := client.Set(ctx, url.Slug, url.Target, 0).Err()
 	if err != nil {
 		log.Printf("Error setting cached target URL (slug: %v) (%v)", url.Slug, err)
@@ -44,6 +48,10 @@ func SetCachedUrl(client *redis.Client, url model.Url) {
 }
 
 func DeleteCachedUrl(client *redis.Client, slug string) {
+	// short circuit if cache is disabled
+	if config.CacheEnabled != true {
+		return
+	}
 	err := client.Del(ctx, slug).Err()
 	if err != nil && err != redis.Nil {
 		log.Printf("Error deleting cached target URL (slug: %v) (%v)", slug, err)
