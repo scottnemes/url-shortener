@@ -80,8 +80,7 @@ func Start() {
 		cache.SetCachedUrl(cacheClient, url)
 		gc.JSON(http.StatusOK, gin.H{
 			"message": "New short URL created.",
-			"slug":    url.Slug,
-			"target":  url.Target,
+			"urls":    url,
 		})
 	})
 
@@ -111,6 +110,20 @@ func Start() {
 			gc.JSON(http.StatusOK, gin.H{
 				"slug":   url.Slug,
 				"target": url.Target,
+			})
+		}
+	})
+
+	// get all URLs
+	router.GET("/urls", func(gc *gin.Context) {
+		urls, err := model.GetUrls(dbClient)
+		if err != nil {
+			gc.JSON(http.StatusNotFound, gin.H{
+				"message": "Error retrieving all URLs.",
+			})
+		} else {
+			gc.JSON(http.StatusOK, gin.H{
+				"urls": urls,
 			})
 		}
 	})

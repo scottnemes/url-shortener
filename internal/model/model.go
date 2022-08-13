@@ -65,13 +65,13 @@ func InsertUrl(client *mongo.Client, url Url) error {
 }
 
 func GetTargetUrl(client *mongo.Client, slug string) (Url, error) {
+	url := Url{}
 	collection := client.Database(config.DBDatabase).Collection(config.DBCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	filter := bson.M{"slug": bson.M{"$eq": slug}}
 	opts := options.FindOne().SetSort(bson.M{"created": -1})
-	url := Url{}
 
 	err := collection.FindOne(ctx, filter, opts).Decode(&url)
 	if err != nil {
@@ -86,6 +86,31 @@ func GetTargetUrl(client *mongo.Client, slug string) (Url, error) {
 	}
 
 	return url, err
+}
+
+func GetUrls(client *mongo.Client) ([]Url, error) {
+	urls := []Url{}
+	collection := client.Database(config.DBDatabase).Collection(config.DBCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	cur, err := collection.Find(ctx, bson.D{})
+	if err != nil {
+		log.Printf("Error retrieving all URLs (%v)", err)
+		return []Url{}, err
+	}
+
+	for cur.Next(ctx) {
+		var url Url
+		err := cur.Decode(&url)
+		if err != nil {
+			log.Printf("Error retrieving all URLs (%v)", err)
+			return []Url{}, err
+		}
+		urls = append(urls, url)
+	}
+
+	return urls, err
 }
 
 func UpdateUrl(client *mongo.Client, url Url) error {
