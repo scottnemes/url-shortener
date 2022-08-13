@@ -48,6 +48,43 @@ func Start() {
 	router := gin.Default()
 	router.SetTrustedProxies(nil)
 
+	// create new short URL
+	router.POST("/urls", func(gc *gin.Context) {
+		url := model.Url{}
+		if err := gc.ShouldBindJSON(&url); err != nil {
+			gc.JSON(http.StatusBadRequest, gin.H{
+				"message": err.Error(),
+			})
+			return
+		}
+
+		if url.Target == "" {
+			gc.JSON(http.StatusBadRequest, gin.H{
+				"message": "Error: missing target URL.",
+			})
+			return
+		}
+
+		url.Slug = util.GenerateUrlSlug(&cnt)
+		url.Created = uint64(time.Now().Unix())
+		url.Hits = 1
+
+		err := model.InsertUrl(dbClient, url)
+		if err != nil {
+			gc.JSON(http.StatusBadRequest, gin.H{
+				"message": "Error creating new short URL entry.",
+			})
+			return
+		}
+
+		cache.SetCachedUrl(cacheClient, url)
+		gc.JSON(http.StatusOK, gin.H{
+			"message": "New short URL created.",
+			"slug":    url.Slug,
+			"target":  url.Target,
+		})
+	})
+
 	// get target URL from slug
 	router.GET("/urls/:slug", func(gc *gin.Context) {
 		slug := gc.Param("slug")
@@ -58,6 +95,7 @@ func Start() {
 		url := cache.GetCachedUrl(cacheClient, slug)
 		if url.Target != "" {
 			gc.JSON(http.StatusOK, gin.H{
+				"slug":   url.Slug,
 				"target": url.Target,
 			})
 			return
@@ -71,47 +109,47 @@ func Start() {
 			})
 		} else {
 			gc.JSON(http.StatusOK, gin.H{
+				"slug":   url.Slug,
 				"target": url.Target,
 			})
 		}
 	})
 
-	// create new short URL
-	router.POST("/urls", func(gc *gin.Context) {
-		json := model.Url{}
-		if err := gc.ShouldBindJSON(&json); err != nil {
+	// update target URL from slug
+	router.PUT("/urls/:slug", func(gc *gin.Context) {
+		slug := gc.Param("slug")
+		url := model.Url{}
+		if err := gc.ShouldBindJSON(&url); err != nil {
 			gc.JSON(http.StatusBadRequest, gin.H{
 				"message": err.Error(),
 			})
 			return
 		}
 
-		if json.Target == "" {
+		if url.Target == "" {
 			gc.JSON(http.StatusBadRequest, gin.H{
 				"message": "Error: missing target URL.",
 			})
 			return
 		}
 
-		newUrl := model.Url{
-			Slug:    util.GenerateUrlSlug(&cnt),
-			Target:  json.Target,
-			Created: uint64(time.Now().Unix()),
-			Hits:    1,
-		}
+		url.Slug = slug
+		url.Created = uint64(time.Now().Unix())
+		url.Hits = 1
 
-		err := model.InsertUrl(dbClient, newUrl)
+		err := model.UpdateUrl(dbClient, url)
 		if err != nil {
 			gc.JSON(http.StatusBadRequest, gin.H{
-				"message": "Error creating new short URL entry.",
+				"message": "Error updating URL entry.",
 			})
 			return
 		}
 
-		cache.SetCachedUrl(cacheClient, newUrl)
+		cache.SetCachedUrl(cacheClient, url)
 		gc.JSON(http.StatusOK, gin.H{
-			"message": "New short URL created.",
-			"slug":    newUrl.Slug,
+			"message": "Short URL updated.",
+			"slug":    url.Slug,
+			"target":  url.Target,
 		})
 	})
 

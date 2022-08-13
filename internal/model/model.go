@@ -64,22 +64,6 @@ func InsertUrl(client *mongo.Client, url Url) error {
 	return err
 }
 
-func DeleteUrl(client *mongo.Client, slug string) error {
-	collection := client.Database(config.DBDatabase).Collection(config.DBCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	_, err := collection.DeleteOne(
-		ctx,
-		bson.M{"slug": slug},
-	)
-	if err != nil {
-		log.Printf("Error deleting URL (slug: %v) (%v)", slug, err)
-	}
-
-	return err
-}
-
 func GetTargetUrl(client *mongo.Client, slug string) (Url, error) {
 	collection := client.Database(config.DBDatabase).Collection(config.DBCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -102,6 +86,39 @@ func GetTargetUrl(client *mongo.Client, slug string) (Url, error) {
 	}
 
 	return url, err
+}
+
+func UpdateUrl(client *mongo.Client, url Url) error {
+	collection := client.Database(config.DBDatabase).Collection(config.DBCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err := collection.UpdateOne(
+		ctx,
+		bson.M{"slug": url.Slug},
+		bson.M{"$set": bson.M{"target": url.Target}},
+	)
+	if err != nil {
+		log.Printf("Error updating target URL (slug: %v) (%v)", url.Slug, err)
+	}
+
+	return err
+}
+
+func DeleteUrl(client *mongo.Client, slug string) error {
+	collection := client.Database(config.DBDatabase).Collection(config.DBCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err := collection.DeleteOne(
+		ctx,
+		bson.M{"slug": slug},
+	)
+	if err != nil {
+		log.Printf("Error deleting URL (slug: %v) (%v)", slug, err)
+	}
+
+	return err
 }
 
 func UpdateUrlHits(client *mongo.Client, slug string) error {

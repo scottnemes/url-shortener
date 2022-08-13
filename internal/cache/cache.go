@@ -28,6 +28,7 @@ func GetCachedUrl(client *redis.Client, slug string) model.Url {
 		return url
 	}
 	targetUrl, err := client.Get(ctx, slug).Result()
+	url.Slug = slug
 	url.Target = targetUrl
 	if err != nil {
 		log.Printf("Error looking up cached target URL (slug: %v) (%v)", slug, err)
