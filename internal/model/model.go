@@ -79,12 +79,6 @@ func GetTargetUrl(client *mongo.Client, slug string) (Url, error) {
 		return Url{}, err
 	}
 
-	// update the hit count for the given short URL
-	err = UpdateUrlHits(client, slug)
-	if err != nil {
-		log.Println(err)
-	}
-
 	return url, err
 }
 

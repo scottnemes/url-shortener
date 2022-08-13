@@ -2,8 +2,10 @@ package cache
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
+	"time"
 
 	"example.com/url-shortener/internal/config"
 	"example.com/url-shortener/internal/model"
@@ -27,9 +29,11 @@ func GetCachedUrl(client *redis.Client, slug string) model.Url {
 	if config.CacheEnabled != true {
 		return url
 	}
-	targetUrl, err := client.Get(ctx, slug).Result()
-	url.Slug = slug
-	url.Target = targetUrl
+	result, err := client.Get(ctx, slug).Result()
+	if err != nil {
+		log.Printf("Error looking up cached target URL (slug: %v) (%v)", slug, err)
+	}
+	err = json.Unmarshal([]byte(result), &url)
 	if err != nil {
 		log.Printf("Error looking up cached target URL (slug: %v) (%v)", slug, err)
 	}
@@ -42,7 +46,11 @@ func SetCachedUrl(client *redis.Client, url model.Url) {
 	if config.CacheEnabled != true {
 		return
 	}
-	err := client.Set(ctx, url.Slug, url.Target, 0).Err()
+	json, err := json.Marshal(url)
+	if err != nil {
+		log.Printf("Error setting cached target URL (slug: %v) (%v)", url.Slug, err)
+	}
+	err = client.Set(ctx, url.Slug, json, config.CacheExpireHours*time.Hour).Err()
 	if err != nil {
 		log.Printf("Error setting cached target URL (slug: %v) (%v)", url.Slug, err)
 	}

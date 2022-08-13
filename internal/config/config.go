@@ -21,9 +21,10 @@ const (
 	DBDatabase   = "short_urls"
 	DBCollection = "urls"
 	// Cache
-	CacheEnabled = true
-	CacheHost    = "localhost"
-	CachePort    = "6379"
-	CachePass    = ""
-	CacheDB      = 0
+	CacheEnabled     = true
+	CacheHost        = "localhost"
+	CachePort        = "6379"
+	CachePass        = ""
+	CacheDB          = 0
+	CacheExpireHours = 1
 )

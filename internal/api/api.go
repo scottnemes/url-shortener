@@ -97,6 +97,11 @@ func Start() {
 		// if not found, continue on to check the database
 		url := cache.GetCachedUrl(cacheClient, slug)
 		if url.Target != "" {
+			// update the hit count for the given short URL
+			err := model.UpdateUrlHits(dbClient, slug)
+			if err != nil {
+				log.Printf("Error updating hits for URL (slug: %v) (%v)", slug, err)
+			}
 			gc.JSON(http.StatusOK, gin.H{
 				"status":  http.StatusOK,
 				"message": "success",
@@ -113,6 +118,11 @@ func Start() {
 				"message": "Short URL not found.",
 			})
 		} else {
+			// update the hit count for the given short URL
+			err := model.UpdateUrlHits(dbClient, slug)
+			if err != nil {
+				log.Printf("Error updating hits for URL (slug: %v) (%v)", slug, err)
+			}
 			gc.JSON(http.StatusOK, gin.H{
 				"status":  http.StatusOK,
 				"message": "success",
