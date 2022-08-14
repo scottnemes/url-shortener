@@ -3,6 +3,7 @@ package util
 import (
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"regexp"
 	"strconv"
@@ -10,6 +11,7 @@ import (
 	"sync"
 
 	"example.com/url-shortener/internal/config"
+	"example.com/url-shortener/internal/model"
 )
 
 type Counter struct {
@@ -109,4 +111,13 @@ func IsValidSlug(slug string) bool {
 	re := fmt.Sprintf("^[A-Za-z0-9]{0,%v}$", config.MaxSlugLen)
 	isBase62 := regexp.MustCompile(re).MatchString
 	return isBase62(slug)
+}
+
+func IsValidUrl(u model.Url) bool {
+	_, err := url.ParseRequestURI(u.Target)
+	if err != nil {
+		return false
+	} else {
+		return true
+	}
 }

@@ -67,6 +67,14 @@ func Start() {
 			})
 			return
 		}
+		// check if target URL is valid
+		if !util.IsValidUrl(url) {
+			gc.JSON(http.StatusBadRequest, gin.H{
+				"status":  http.StatusBadRequest,
+				"message": "Invalid URL for shortening.",
+			})
+			return
+		}
 
 		url.Slug = util.GenerateUrlSlug(&cnt)
 		url.Created = uint64(time.Now().Unix())
@@ -191,10 +199,19 @@ func Start() {
 			return
 		}
 
+		// check if target URL is provided
 		if url.Target == "" {
 			gc.JSON(http.StatusBadRequest, gin.H{
 				"status":  http.StatusBadRequest,
-				"message": "Missing target URL for updating.",
+				"message": "Missing URL for updating.",
+			})
+			return
+		}
+		// check if target URL is valid
+		if !util.IsValidUrl(url) {
+			gc.JSON(http.StatusBadRequest, gin.H{
+				"status":  http.StatusBadRequest,
+				"message": "Invalid URL for updating.",
 			})
 			return
 		}
