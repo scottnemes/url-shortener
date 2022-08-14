@@ -84,8 +84,8 @@ func Start() {
 			cache.SetCachedUrl(cacheClient, url)
 		}
 
-		gc.JSON(http.StatusOK, gin.H{
-			"status":  http.StatusOK,
+		gc.JSON(http.StatusCreated, gin.H{
+			"status":  http.StatusCreated,
 			"message": "success",
 			"urls":    url,
 		})
