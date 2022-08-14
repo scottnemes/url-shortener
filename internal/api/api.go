@@ -100,18 +100,20 @@ func Start() {
 		// if not found, continue on to check the database
 		if config.CacheEnabled {
 			url := cache.GetCachedUrl(cacheClient, slug)
-			// update the hit count for the given short URL
-			err := model.UpdateUrlHits(dbClient, slug)
-			if err != nil {
-				log.Printf("Error updating hits for URL from cache (slug: %v) (%v)", slug, err)
-			}
+			if url.Target != "" {
+				// update the hit count for the given short URL
+				err := model.UpdateUrlHits(dbClient, slug)
+				if err != nil {
+					log.Printf("Error updating hits for URL from cache (slug: %v) (%v)", slug, err)
+				}
 
-			gc.JSON(http.StatusOK, gin.H{
-				"status":  http.StatusOK,
-				"message": "success",
-				"urls":    url,
-			})
-			return
+				gc.JSON(http.StatusOK, gin.H{
+					"status":  http.StatusOK,
+					"message": "success",
+					"urls":    url,
+				})
+				return
+			}
 		}
 
 		// check database for the provided slug
@@ -226,6 +228,13 @@ func Start() {
 				"message": "success",
 			})
 		}
+	})
+
+	router.NoRoute(func(gc *gin.Context) {
+		gc.JSON(http.StatusNotFound, gin.H{
+			"status":  http.StatusNotFound,
+			"message": "Invalid route.",
+		})
 	})
 
 	srv := &http.Server{
