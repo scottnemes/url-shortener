@@ -49,7 +49,7 @@ func Start() {
 	router.SetTrustedProxies(nil)
 
 	// create new short URL
-	router.POST("/urls", func(gc *gin.Context) {
+	router.POST("/v1/urls", func(gc *gin.Context) {
 		url := model.Url{}
 		if err := gc.ShouldBindJSON(&url); err != nil {
 			gc.JSON(http.StatusBadRequest, gin.H{
@@ -92,7 +92,7 @@ func Start() {
 	})
 
 	// get target URL from slug
-	router.GET("/urls/:slug", func(gc *gin.Context) {
+	router.GET("/v1/urls/:slug", func(gc *gin.Context) {
 		slug := gc.Param("slug")
 
 		// check cache (if enabled) for the provided slug
@@ -144,7 +144,7 @@ func Start() {
 	})
 
 	// get all URLs
-	router.GET("/urls", func(gc *gin.Context) {
+	router.GET("/v1/urls", func(gc *gin.Context) {
 		urls, err := model.GetUrls(dbClient)
 		if err != nil {
 			gc.JSON(http.StatusNotFound, gin.H{
@@ -161,7 +161,7 @@ func Start() {
 	})
 
 	// update target URL from slug
-	router.PUT("/urls/:slug", func(gc *gin.Context) {
+	router.PUT("/v1/urls/:slug", func(gc *gin.Context) {
 		slug := gc.Param("slug")
 		url := model.Url{}
 		if err := gc.ShouldBindJSON(&url); err != nil {
@@ -207,7 +207,7 @@ func Start() {
 	})
 
 	// delete short URL by slug
-	router.DELETE("/urls/:slug", func(gc *gin.Context) {
+	router.DELETE("/v1/urls/:slug", func(gc *gin.Context) {
 		slug := gc.Param("slug")
 
 		// delete URL from cache (if enabled)
