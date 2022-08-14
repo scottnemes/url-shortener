@@ -26,7 +26,9 @@ func GetCacheClient() *redis.Client {
 func GetCachedUrl(client *redis.Client, slug string) model.Url {
 	url := model.Url{}
 	result, err := client.Get(ctx, slug).Result()
-	if err != nil {
+	if err == redis.Nil {
+		return url
+	} else if err != nil {
 		log.Printf("Error looking up cached URL (slug: %v) (%v)", slug, err)
 		return url
 	}
@@ -41,7 +43,7 @@ func GetCachedUrl(client *redis.Client, slug string) model.Url {
 func SetCachedUrl(client *redis.Client, url model.Url) {
 	json, err := json.Marshal(url)
 	if err != nil {
-		log.Printf("Error setting cached URL (slug: %v) (%v)", url.Slug, err)
+		log.Printf("Error marshalling cached URL (slug: %v) (%v)", url.Slug, err)
 	}
 	err = client.Set(ctx, url.Slug, json, config.CacheExpireHours*time.Hour).Err()
 	if err != nil {
