@@ -64,7 +64,7 @@ func InsertUrl(client *mongo.Client, url Url) error {
 	return err
 }
 
-func GetTargetUrl(client *mongo.Client, slug string) (Url, error) {
+func GetUrl(client *mongo.Client, slug string) (Url, error) {
 	url := Url{}
 	collection := client.Database(config.DBDatabase).Collection(config.DBCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -75,7 +75,7 @@ func GetTargetUrl(client *mongo.Client, slug string) (Url, error) {
 
 	err := collection.FindOne(ctx, filter, opts).Decode(&url)
 	if err != nil {
-		log.Printf("Error looking up target URL (slug: %v) (%v)", slug, err)
+		log.Printf("Error looking up URL (slug: %v) (%v)", slug, err)
 		return Url{}, err
 	}
 

@@ -62,7 +62,7 @@ func Start() {
 		if url.Target == "" {
 			gc.JSON(http.StatusBadRequest, gin.H{
 				"status":  http.StatusBadRequest,
-				"message": "Missing target URL for shortening.",
+				"message": "Missing URL for shortening.",
 			})
 			return
 		}
@@ -94,13 +94,12 @@ func Start() {
 	// get target URL from slug
 	router.GET("/urls/:slug", func(gc *gin.Context) {
 		slug := gc.Param("slug")
-		url := model.Url{}
 
 		// check cache (if enabled) for the provided slug
 		// if found, return
 		// if not found, continue on to check the database
 		if config.CacheEnabled {
-			url = cache.GetCachedUrl(cacheClient, slug)
+			url := cache.GetCachedUrl(cacheClient, slug)
 			// update the hit count for the given short URL
 			err := model.UpdateUrlHits(dbClient, slug)
 			if err != nil {
@@ -116,7 +115,7 @@ func Start() {
 		}
 
 		// check database for the provided slug
-		url, err := model.GetTargetUrl(dbClient, slug)
+		url, err := model.GetUrl(dbClient, slug)
 		if err != nil {
 			gc.JSON(http.StatusNotFound, gin.H{
 				"status":  http.StatusNotFound,
