@@ -73,8 +73,8 @@ func Start() {
 
 		err := model.InsertUrl(dbClient, url)
 		if err != nil {
-			gc.JSON(http.StatusBadRequest, gin.H{
-				"status":  http.StatusBadRequest,
+			gc.JSON(http.StatusServiceUnavailable, gin.H{
+				"status":  http.StatusServiceUnavailable,
 				"message": "Error creating new short URL.",
 			})
 			return
@@ -192,8 +192,8 @@ func Start() {
 		// update record in database
 		err := model.UpdateUrl(dbClient, url)
 		if err != nil {
-			gc.JSON(http.StatusBadRequest, gin.H{
-				"status":  http.StatusBadRequest,
+			gc.JSON(http.StatusServiceUnavailable, gin.H{
+				"status":  http.StatusServiceUnavailable,
 				"message": "Error updating URL record.",
 			})
 			return
