@@ -4,9 +4,12 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
+
+	"example.com/url-shortener/internal/config"
 )
 
 type Counter struct {
@@ -100,4 +103,10 @@ func GenerateUrlSlug(c *Counter) string {
 
 	}
 	return slug
+}
+
+func IsValidSlug(slug string) bool {
+	re := fmt.Sprintf("^[A-Za-z0-9]{0,%v}$", config.MaxSlugLen)
+	isBase62 := regexp.MustCompile(re).MatchString
+	return isBase62(slug)
 }

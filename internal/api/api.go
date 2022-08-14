@@ -59,6 +59,7 @@ func Start() {
 			return
 		}
 
+		// check if target URL is provided
 		if url.Target == "" {
 			gc.JSON(http.StatusBadRequest, gin.H{
 				"status":  http.StatusBadRequest,
@@ -94,6 +95,15 @@ func Start() {
 	// get target URL from slug
 	router.GET("/v1/urls/:slug", func(gc *gin.Context) {
 		slug := gc.Param("slug")
+
+		// verify provided slug
+		if !util.IsValidSlug(slug) {
+			gc.JSON(http.StatusBadRequest, gin.H{
+				"status":  http.StatusBadRequest,
+				"message": "Invalid short URL provided.",
+			})
+			return
+		}
 
 		// check cache (if enabled) for the provided slug
 		// if found, return
@@ -163,6 +173,15 @@ func Start() {
 	// update target URL from slug
 	router.PUT("/v1/urls/:slug", func(gc *gin.Context) {
 		slug := gc.Param("slug")
+		// verify provided slug
+		if !util.IsValidSlug(slug) {
+			gc.JSON(http.StatusBadRequest, gin.H{
+				"status":  http.StatusBadRequest,
+				"message": "Invalid short URL provided.",
+			})
+			return
+		}
+
 		url := model.Url{}
 		if err := gc.ShouldBindJSON(&url); err != nil {
 			gc.JSON(http.StatusBadRequest, gin.H{
@@ -209,6 +228,14 @@ func Start() {
 	// delete short URL by slug
 	router.DELETE("/v1/urls/:slug", func(gc *gin.Context) {
 		slug := gc.Param("slug")
+		// verify provided slug
+		if !util.IsValidSlug(slug) {
+			gc.JSON(http.StatusBadRequest, gin.H{
+				"status":  http.StatusBadRequest,
+				"message": "Invalid short URL provided.",
+			})
+			return
+		}
 
 		// delete URL from cache (if enabled)
 		if config.CacheEnabled {
