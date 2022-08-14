@@ -80,7 +80,10 @@ func Start() {
 			return
 		}
 
-		cache.SetCachedUrl(cacheClient, url)
+		if config.CacheEnabled {
+			cache.SetCachedUrl(cacheClient, url)
+		}
+
 		gc.JSON(http.StatusOK, gin.H{
 			"status":  http.StatusOK,
 			"message": "success",
@@ -91,17 +94,19 @@ func Start() {
 	// get target URL from slug
 	router.GET("/urls/:slug", func(gc *gin.Context) {
 		slug := gc.Param("slug")
+		url := model.Url{}
 
 		// check cache (if enabled) for the provided slug
 		// if found, return
 		// if not found, continue on to check the database
-		url := cache.GetCachedUrl(cacheClient, slug)
-		if url.Target != "" {
+		if config.CacheEnabled {
+			url = cache.GetCachedUrl(cacheClient, slug)
 			// update the hit count for the given short URL
 			err := model.UpdateUrlHits(dbClient, slug)
 			if err != nil {
-				log.Printf("Error updating hits for URL (slug: %v) (%v)", slug, err)
+				log.Printf("Error updating hits for URL from cache (slug: %v) (%v)", slug, err)
 			}
+
 			gc.JSON(http.StatusOK, gin.H{
 				"status":  http.StatusOK,
 				"message": "success",
@@ -125,7 +130,9 @@ func Start() {
 			}
 
 			// URL is not in cache, so add it
-			cache.SetCachedUrl(cacheClient, url)
+			if config.CacheEnabled {
+				cache.SetCachedUrl(cacheClient, url)
+			}
 
 			gc.JSON(http.StatusOK, gin.H{
 				"status":  http.StatusOK,
@@ -177,12 +184,9 @@ func Start() {
 		url.Hits = 1
 
 		// update record in cache if it exists
-		cache.SetCachedUrl(cacheClient, url)
-		gc.JSON(http.StatusOK, gin.H{
-			"status":  http.StatusOK,
-			"message": "success",
-			"urls":    url,
-		})
+		if config.CacheEnabled {
+			cache.SetCachedUrl(cacheClient, url)
+		}
 
 		// update record in database
 		err := model.UpdateUrl(dbClient, url)
@@ -193,6 +197,12 @@ func Start() {
 			})
 			return
 		}
+
+		gc.JSON(http.StatusOK, gin.H{
+			"status":  http.StatusOK,
+			"message": "success",
+			"urls":    url,
+		})
 	})
 
 	// delete short URL by slug
@@ -200,7 +210,9 @@ func Start() {
 		slug := gc.Param("slug")
 
 		// delete URL from cache (if enabled)
-		cache.DeleteCachedUrl(cacheClient, slug)
+		if config.CacheEnabled {
+			cache.DeleteCachedUrl(cacheClient, slug)
+		}
 
 		// delete URL from database
 		err := model.DeleteUrl(dbClient, slug)
