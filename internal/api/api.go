@@ -123,6 +123,10 @@ func Start() {
 			if err != nil {
 				log.Printf("Error updating hits for URL (slug: %v) (%v)", slug, err)
 			}
+
+			// URL is not in cache, so add it
+			cache.SetCachedUrl(cacheClient, url)
+
 			gc.JSON(http.StatusOK, gin.H{
 				"status":  http.StatusOK,
 				"message": "success",
