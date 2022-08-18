@@ -13,12 +13,20 @@ import (
 
 	"example.com/url-shortener/internal/cache"
 	"example.com/url-shortener/internal/config"
+	"example.com/url-shortener/internal/logging"
 	"example.com/url-shortener/internal/model"
 	"example.com/url-shortener/internal/util"
 	"github.com/gin-gonic/gin"
 )
 
 func Start() {
+	// enable logging to file
+	logging.StartLogging()
+	defer logging.F.Close()
+	log.SetOutput(logging.F)
+
+	log.Printf("Starting server...")
+
 	// if counterFile exists, used the saved range
 	// if not, get a new range
 	cnt := util.Counter{}

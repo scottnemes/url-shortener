@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"example.com/url-shortener/internal/config"
+	"example.com/url-shortener/internal/logging"
 	"example.com/url-shortener/internal/model"
 )
 
@@ -43,10 +44,16 @@ func (c *Counter) GetNewRange() (uint64, uint64) {
 	c.Mu.Lock()
 	defer c.Mu.Unlock()
 	c.Counter, c.CounterEnd = 1000000, 2000000
+
+	if config.DebugMode {
+		log.Printf("[DEBUG] Generated new counter range (%v through %v)", c.Counter, c.CounterEnd)
+	}
+
 	return c.Counter, c.CounterEnd
 }
 
 func LoadCounterRange(fileName string) (uint64, uint64) {
+	log.SetOutput(logging.F)
 	data, err := os.ReadFile(fileName)
 	if err != nil {
 		log.Fatalln(err)
@@ -70,16 +77,25 @@ func LoadCounterRange(fileName string) (uint64, uint64) {
 		log.Printf("Error removing counter range file: %v", err)
 	}
 
+	if config.DebugMode {
+		log.Printf("[DEBUG] Loaded counter range from file (%v through %v)", counter, counterEnd)
+	}
+
 	return uint64(counter), uint64(counterEnd)
 }
 
 func SaveCounterRange(fileName string, c *Counter) {
+	log.SetOutput(logging.F)
 	f, err := os.Create(fileName)
 	if err != nil {
 		log.Printf("Error saving counter range file: %v", err)
 	}
 	defer f.Close()
 	f.WriteString(fmt.Sprintf("%v %v", c.Counter, c.CounterEnd))
+
+	if config.DebugMode {
+		log.Printf("[DEBUG] Saved counter range to file (%v through %v)", c.Counter, c.CounterEnd)
+	}
 }
 
 func FileExists(fileName string) bool {

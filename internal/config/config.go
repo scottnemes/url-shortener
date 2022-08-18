@@ -7,9 +7,10 @@ package config
 
 const (
 	// General
-	ConfigDir   = "/etc/url-shortener"
+	ConfigDir   = "/etc/url_shortener"
 	CounterFile = "/tmp/counter_range.dat"
 	DebugMode   = true
+	LogFile     = "/tmp/url_shortener.log"
 	// Limits
 	MaxSlugLen = 7
 	// Gin
