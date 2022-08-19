@@ -56,6 +56,14 @@ func Start() {
 	router := gin.Default()
 	router.SetTrustedProxies(nil)
 
+	// ping health check
+	router.GET("/v1/ping", func(gc *gin.Context) {
+		gc.JSON(http.StatusOK, gin.H{
+			"status":  http.StatusOK,
+			"message": "pong",
+		})
+	})
+
 	// create new short URL
 	router.POST("/v1/urls", func(gc *gin.Context) {
 		url := model.Url{}
