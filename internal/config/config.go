@@ -14,7 +14,10 @@ const (
 	// Limits
 	MaxSlugLen = 7
 	// Gin
-	GinPort = "8080"
+	GinPort = "8443"
+	// TLS
+	TlsCrt = "/tmp/localhost.crt"
+	TlsKey = "/tmp/localhost.key"
 	// Database
 	dbHost       = "127.0.0.1"
 	dbPort       = "27017"

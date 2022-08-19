@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"log"
@@ -290,6 +291,7 @@ func Start() {
 		}
 	})
 
+	// catch all default route
 	router.NoRoute(func(gc *gin.Context) {
 		gc.JSON(http.StatusNotFound, gin.H{
 			"status":  http.StatusNotFound,
@@ -298,13 +300,14 @@ func Start() {
 	})
 
 	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%v", config.GinPort),
-		Handler: router,
+		Addr:      fmt.Sprintf(":%v", config.GinPort),
+		Handler:   router,
+		TLSConfig: &tls.Config{},
 	}
 
 	// start server in goroutine to allow graceful shutdown
 	go func() {
-		if err := srv.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
+		if err := srv.ListenAndServeTLS(config.TlsCrt, config.TlsKey); err != nil && errors.Is(err, http.ErrServerClosed) {
 			log.Printf("Listen: %s\n", err)
 		}
 	}()
