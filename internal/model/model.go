@@ -5,7 +5,6 @@ import (
 	"log"
 	"time"
 
-	"example.com/url-shortener/internal/config"
 	"example.com/url-shortener/internal/logging"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -20,7 +19,7 @@ type Url struct {
 	Hits    uint64 `bson:"hits" json:"hits"`
 }
 
-func GetDBClient() *mongo.Client {
+func GetDBClient(conn string) *mongo.Client {
 	/*
 		TODO:
 		1. Setup database authentication
@@ -35,7 +34,7 @@ func GetDBClient() *mongo.Client {
 	defer cancel()
 
 	//clientOptions := options.Client().ApplyURI(db_conn_string).SetAuth(credentials)
-	clientOptions := options.Client().ApplyURI(config.DBConnString)
+	clientOptions := options.Client().ApplyURI(conn)
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		panic(err)
@@ -52,9 +51,9 @@ func GetDBClient() *mongo.Client {
 	return client
 }
 
-func InsertUrl(client *mongo.Client, url Url) error {
+func InsertUrl(debug bool, db string, dbCollection string, client *mongo.Client, url Url) error {
 	log.SetOutput(logging.F)
-	collection := client.Database(config.DBDatabase).Collection(config.DBCollection)
+	collection := client.Database(db).Collection(dbCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -63,17 +62,17 @@ func InsertUrl(client *mongo.Client, url Url) error {
 		log.Printf("Error creating new short URL (slug: %v) (%v)", url.Slug, err)
 	}
 
-	if config.DebugMode {
+	if debug {
 		log.Printf("[DEBUG] Inserted URL in database (slug: %v) (target: %v)", url.Slug, url.Target)
 	}
 
 	return err
 }
 
-func GetUrl(client *mongo.Client, slug string) (Url, error) {
+func GetUrl(debug bool, db string, dbCollection string, client *mongo.Client, slug string) (Url, error) {
 	log.SetOutput(logging.F)
 	url := Url{}
-	collection := client.Database(config.DBDatabase).Collection(config.DBCollection)
+	collection := client.Database(db).Collection(dbCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -85,7 +84,7 @@ func GetUrl(client *mongo.Client, slug string) (Url, error) {
 		log.Printf("Error looking up URL (slug: %v) (%v)", slug, err)
 	}
 
-	if config.DebugMode {
+	if debug {
 		if err == mongo.ErrNoDocuments {
 			log.Printf("[DEBUG] Attempted to get missing URL from database (slug: %v)", slug)
 		} else {
@@ -96,10 +95,10 @@ func GetUrl(client *mongo.Client, slug string) (Url, error) {
 	return url, err
 }
 
-func GetUrls(client *mongo.Client) ([]Url, error) {
+func GetUrls(debug bool, db string, dbCollection string, client *mongo.Client) ([]Url, error) {
 	log.SetOutput(logging.F)
 	urls := []Url{}
-	collection := client.Database(config.DBDatabase).Collection(config.DBCollection)
+	collection := client.Database(db).Collection(dbCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -121,16 +120,16 @@ func GetUrls(client *mongo.Client) ([]Url, error) {
 		count += 1
 	}
 
-	if config.DebugMode {
+	if debug {
 		log.Printf("[DEBUG] Got URLs from database (count: %v)", count)
 	}
 
 	return urls, err
 }
 
-func UpdateUrl(client *mongo.Client, url Url) error {
+func UpdateUrl(debug bool, db string, dbCollection string, client *mongo.Client, url Url) error {
 	log.SetOutput(logging.F)
-	collection := client.Database(config.DBDatabase).Collection(config.DBCollection)
+	collection := client.Database(db).Collection(dbCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -143,16 +142,16 @@ func UpdateUrl(client *mongo.Client, url Url) error {
 		log.Printf("Error updating target URL (slug: %v) (%v)", url.Slug, err)
 	}
 
-	if config.DebugMode {
+	if debug {
 		log.Printf("[DEBUG] Updated URL in database (slug: %v) (target: %v)", url.Slug, url.Target)
 	}
 
 	return err
 }
 
-func DeleteUrl(client *mongo.Client, slug string) error {
+func DeleteUrl(debug bool, db string, dbCollection string, client *mongo.Client, slug string) error {
 	log.SetOutput(logging.F)
-	collection := client.Database(config.DBDatabase).Collection(config.DBCollection)
+	collection := client.Database(db).Collection(dbCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -164,16 +163,16 @@ func DeleteUrl(client *mongo.Client, slug string) error {
 		log.Printf("Error deleting URL (slug: %v) (%v)", slug, err)
 	}
 
-	if config.DebugMode {
+	if debug {
 		log.Printf("[DEBUG] Deleted URL from database (slug: %v)", slug)
 	}
 
 	return err
 }
 
-func UpdateUrlHits(client *mongo.Client, slug string) error {
+func UpdateUrlHits(debug bool, db string, dbCollection string, client *mongo.Client, slug string) error {
 	log.SetOutput(logging.F)
-	collection := client.Database(config.DBDatabase).Collection(config.DBCollection)
+	collection := client.Database(db).Collection(dbCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -186,7 +185,7 @@ func UpdateUrlHits(client *mongo.Client, slug string) error {
 		log.Printf("Error updating URL hits (slug: %v) (%v)", slug, err)
 	}
 
-	if config.DebugMode {
+	if debug {
 		log.Printf("[DEBUG] Updated URL hits in database (slug: %v)", slug)
 	}
 

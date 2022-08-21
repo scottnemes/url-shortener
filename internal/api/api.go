@@ -21,8 +21,12 @@ import (
 )
 
 func Start() {
+	// load configuration file
+	config := config.LoadConfig()
+	config.Init()
+
 	// enable logging to file
-	logging.StartLogging()
+	logging.StartLogging(config.LogFile)
 	defer logging.F.Close()
 	log.SetOutput(logging.F)
 
@@ -32,14 +36,14 @@ func Start() {
 	// if not, get a new range
 	cnt := util.Counter{}
 	if util.FileExists(config.CounterFile) {
-		cnt.Counter, cnt.CounterEnd = util.LoadCounterRange(config.CounterFile)
+		cnt.Counter, cnt.CounterEnd = util.LoadCounterRange(config.DebugMode, config.CounterFile)
 	} else {
-		cnt.Counter, cnt.CounterEnd = cnt.GetNewRange()
+		cnt.Counter, cnt.CounterEnd = cnt.GetNewRange(config.DebugMode)
 	}
 	// save counter range to file on non-fatal exit
-	defer util.SaveCounterRange(config.CounterFile, &cnt)
+	defer util.SaveCounterRange(config.DebugMode, config.CounterFile, &cnt)
 
-	dbClient := model.GetDBClient()
+	dbClient := model.GetDBClient(config.DBConnString)
 	// close the database connection before exit
 	defer func() {
 		if err := dbClient.Disconnect(context.TODO()); err != nil {
@@ -47,7 +51,7 @@ func Start() {
 		}
 	}()
 
-	cacheClient := cache.GetCacheClient()
+	cacheClient := cache.GetCacheClient(config.CacheHost, config.CachePort, config.CacheDB, config.CachePass)
 
 	if config.DebugMode {
 		gin.SetMode(gin.DebugMode)
@@ -93,11 +97,11 @@ func Start() {
 			return
 		}
 
-		url.Slug = util.GenerateUrlSlug(&cnt)
+		url.Slug = util.GenerateUrlSlug(config.DebugMode, &cnt)
 		url.Created = uint64(time.Now().Unix())
 		url.Hits = 1
 
-		err := model.InsertUrl(dbClient, url)
+		err := model.InsertUrl(config.DebugMode, config.DBDatabase, config.DBCollection, dbClient, url)
 		if err != nil {
 			gc.JSON(http.StatusServiceUnavailable, gin.H{
 				"status":  http.StatusServiceUnavailable,
@@ -107,7 +111,7 @@ func Start() {
 		}
 
 		if config.CacheEnabled {
-			cache.SetCachedUrl(cacheClient, url)
+			cache.SetCachedUrl(config.DebugMode, config.CacheExpireHours, cacheClient, url)
 		}
 
 		gc.JSON(http.StatusCreated, gin.H{
@@ -122,7 +126,7 @@ func Start() {
 		slug := gc.Param("slug")
 
 		// verify provided slug
-		if !util.IsValidSlug(slug) {
+		if !util.IsValidSlug(config.MaxSlugLen, slug) {
 			gc.JSON(http.StatusBadRequest, gin.H{
 				"status":  http.StatusBadRequest,
 				"message": "Invalid short URL provided.",
@@ -134,10 +138,10 @@ func Start() {
 		// if found, return
 		// if not found, continue on to check the database
 		if config.CacheEnabled {
-			url := cache.GetCachedUrl(cacheClient, slug)
+			url := cache.GetCachedUrl(config.DebugMode, cacheClient, slug)
 			if url.Target != "" {
 				// update the hit count for the given short URL
-				err := model.UpdateUrlHits(dbClient, slug)
+				err := model.UpdateUrlHits(config.DebugMode, config.DBDatabase, config.DBCollection, dbClient, slug)
 				if err != nil {
 					log.Printf("Error updating hits for URL from cache (slug: %v) (%v)", slug, err)
 				}
@@ -152,7 +156,7 @@ func Start() {
 		}
 
 		// check database for the provided slug
-		url, err := model.GetUrl(dbClient, slug)
+		url, err := model.GetUrl(config.DebugMode, config.DBDatabase, config.DBCollection, dbClient, slug)
 		if err != nil {
 			gc.JSON(http.StatusNotFound, gin.H{
 				"status":  http.StatusNotFound,
@@ -160,14 +164,14 @@ func Start() {
 			})
 		} else {
 			// update the hit count for the given short URL
-			err := model.UpdateUrlHits(dbClient, slug)
+			err := model.UpdateUrlHits(config.DebugMode, config.DBDatabase, config.DBCollection, dbClient, slug)
 			if err != nil {
 				log.Printf("Error updating hits for URL (slug: %v) (%v)", slug, err)
 			}
 
 			// URL is not in cache, so add it
 			if config.CacheEnabled {
-				cache.SetCachedUrl(cacheClient, url)
+				cache.SetCachedUrl(config.DebugMode, config.CacheExpireHours, cacheClient, url)
 			}
 
 			gc.JSON(http.StatusOK, gin.H{
@@ -180,7 +184,7 @@ func Start() {
 
 	// get all URLs
 	router.GET("/v1/urls", func(gc *gin.Context) {
-		urls, err := model.GetUrls(dbClient)
+		urls, err := model.GetUrls(config.DebugMode, config.DBDatabase, config.DBCollection, dbClient)
 		if err != nil {
 			gc.JSON(http.StatusNotFound, gin.H{
 				"status":  http.StatusNotFound,
@@ -199,7 +203,7 @@ func Start() {
 	router.PUT("/v1/urls/:slug", func(gc *gin.Context) {
 		slug := gc.Param("slug")
 		// verify provided slug
-		if !util.IsValidSlug(slug) {
+		if !util.IsValidSlug(config.MaxSlugLen, slug) {
 			gc.JSON(http.StatusBadRequest, gin.H{
 				"status":  http.StatusBadRequest,
 				"message": "Invalid short URL provided.",
@@ -239,11 +243,11 @@ func Start() {
 
 		// update record in cache if it exists
 		if config.CacheEnabled {
-			cache.SetCachedUrl(cacheClient, url)
+			cache.SetCachedUrl(config.DebugMode, config.CacheExpireHours, cacheClient, url)
 		}
 
 		// update record in database
-		err := model.UpdateUrl(dbClient, url)
+		err := model.UpdateUrl(config.DebugMode, config.DBDatabase, config.DBCollection, dbClient, url)
 		if err != nil {
 			gc.JSON(http.StatusServiceUnavailable, gin.H{
 				"status":  http.StatusServiceUnavailable,
@@ -263,7 +267,7 @@ func Start() {
 	router.DELETE("/v1/urls/:slug", func(gc *gin.Context) {
 		slug := gc.Param("slug")
 		// verify provided slug
-		if !util.IsValidSlug(slug) {
+		if !util.IsValidSlug(config.MaxSlugLen, slug) {
 			gc.JSON(http.StatusBadRequest, gin.H{
 				"status":  http.StatusBadRequest,
 				"message": "Invalid short URL provided.",
@@ -273,11 +277,11 @@ func Start() {
 
 		// delete URL from cache (if enabled)
 		if config.CacheEnabled {
-			cache.DeleteCachedUrl(cacheClient, slug)
+			cache.DeleteCachedUrl(config.DebugMode, cacheClient, slug)
 		}
 
 		// delete URL from database
-		err := model.DeleteUrl(dbClient, slug)
+		err := model.DeleteUrl(config.DebugMode, config.DBDatabase, config.DBCollection, dbClient, slug)
 		if err != nil {
 			gc.JSON(http.StatusNotFound, gin.H{
 				"status":  http.StatusNotFound,

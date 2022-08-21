@@ -10,7 +10,6 @@ import (
 	"strings"
 	"sync"
 
-	"example.com/url-shortener/internal/config"
 	"example.com/url-shortener/internal/logging"
 	"example.com/url-shortener/internal/model"
 )
@@ -21,7 +20,7 @@ type Counter struct {
 	Mu         sync.Mutex
 }
 
-func (c *Counter) GetAndIncrease() (uint64, uint64) {
+func (c *Counter) GetAndIncrease(debug bool) (uint64, uint64) {
 	c.Mu.Lock()
 	defer c.Mu.Unlock()
 	curCounter := c.Counter
@@ -31,12 +30,12 @@ func (c *Counter) GetAndIncrease() (uint64, uint64) {
 	if curCounter < curCounterEnd {
 		c.Counter += 1
 	} else {
-		c.GetNewRange()
+		c.GetNewRange(debug)
 	}
 	return curCounter, curCounterEnd
 }
 
-func (c *Counter) GetNewRange() (uint64, uint64) {
+func (c *Counter) GetNewRange(debug bool) (uint64, uint64) {
 	/*
 		TODO:
 		1. query ZooKeeper to get next available counter range
@@ -45,14 +44,14 @@ func (c *Counter) GetNewRange() (uint64, uint64) {
 	defer c.Mu.Unlock()
 	c.Counter, c.CounterEnd = 1000000, 2000000
 
-	if config.DebugMode {
+	if debug {
 		log.Printf("[DEBUG] Generated new counter range (%v through %v)", c.Counter, c.CounterEnd)
 	}
 
 	return c.Counter, c.CounterEnd
 }
 
-func LoadCounterRange(fileName string) (uint64, uint64) {
+func LoadCounterRange(debug bool, fileName string) (uint64, uint64) {
 	log.SetOutput(logging.F)
 	data, err := os.ReadFile(fileName)
 	if err != nil {
@@ -77,14 +76,14 @@ func LoadCounterRange(fileName string) (uint64, uint64) {
 		log.Printf("Error removing counter range file: %v", err)
 	}
 
-	if config.DebugMode {
+	if debug {
 		log.Printf("[DEBUG] Loaded counter range from file (%v through %v)", counter, counterEnd)
 	}
 
 	return uint64(counter), uint64(counterEnd)
 }
 
-func SaveCounterRange(fileName string, c *Counter) {
+func SaveCounterRange(debug bool, fileName string, c *Counter) {
 	log.SetOutput(logging.F)
 	f, err := os.Create(fileName)
 	if err != nil {
@@ -93,7 +92,7 @@ func SaveCounterRange(fileName string, c *Counter) {
 	defer f.Close()
 	f.WriteString(fmt.Sprintf("%v %v", c.Counter, c.CounterEnd))
 
-	if config.DebugMode {
+	if debug {
 		log.Printf("[DEBUG] Saved counter range to file (%v through %v)", c.Counter, c.CounterEnd)
 	}
 }
@@ -106,13 +105,13 @@ func FileExists(fileName string) bool {
 	return true
 }
 
-func GenerateUrlSlug(c *Counter) string {
+func GenerateUrlSlug(debug bool, c *Counter) string {
 	base := uint64(62)
 	characterSet := "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 	slug := ""
 
 	// uses mutex to get a unique counter value
-	counter, _ := c.GetAndIncrease()
+	counter, _ := c.GetAndIncrease(debug)
 
 	for counter > 0 {
 		r := counter % base
@@ -123,8 +122,8 @@ func GenerateUrlSlug(c *Counter) string {
 	return slug
 }
 
-func IsValidSlug(slug string) bool {
-	re := fmt.Sprintf("^[A-Za-z0-9]{0,%v}$", config.MaxSlugLen)
+func IsValidSlug(maxSlugLen int, slug string) bool {
+	re := fmt.Sprintf("^[A-Za-z0-9]{0,%v}$", maxSlugLen)
 	isBase62 := regexp.MustCompile(re).MatchString
 	return isBase62(slug)
 }
