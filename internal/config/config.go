@@ -12,6 +12,7 @@ import (
 type Configuration struct {
 	// General
 	ConfigDir   string
+	LogDir      string
 	CounterFile string
 	DebugMode   bool
 	LogFile     string
@@ -37,31 +38,19 @@ type Configuration struct {
 	CacheExpireHours time.Duration
 }
 
-func (c *Configuration) Init() {
-	c.LogFile = fmt.Sprintf("%v/%v", c.ConfigDir, c.LogFile)
-	c.CounterFile = fmt.Sprintf("%v/%v", c.ConfigDir, c.CounterFile)
-	c.TlsCrt = fmt.Sprintf("%v/%v", c.ConfigDir, c.TlsCrt)
-	c.TlsKey = fmt.Sprintf("%v/%v", c.ConfigDir, c.TlsKey)
-
+func LoadConfig() Configuration {
+	var configDir string
 	// process flags
 	verbose := flag.Bool("v", false, "Enable debug output")
+	flag.StringVar(&configDir, "config", "", "Path to configuration directory")
 	flag.Parse()
-	c.DebugMode = *verbose
 
-	// process env variables
-	if os.Getenv("USHORT_LOG_FILE") != "" {
-		c.LogFile = os.Getenv("USHORT_LOG_FILE")
+	// if no config dir is provided, set a default to load
+	if configDir == "" {
+		configDir = "/etc/url_shortener"
 	}
-}
 
-func LoadConfig() Configuration {
-	// check if a custom configuration file path is set
-	var configFileName string
-	if os.Getenv("USHORT_CONFIG_FILE") != "" {
-		configFileName = os.Getenv("USHORT_CONFIG_FILE")
-	} else {
-		configFileName = "/etc/url_shortener/url_shortener.conf"
-	}
+	configFileName := fmt.Sprintf("%v/url_shortener.conf", configDir)
 
 	// open and decode configuration file
 	configFile, err := os.Open(configFileName)
@@ -76,5 +65,16 @@ func LoadConfig() Configuration {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// persist config dir in case one was passed in
+	config.ConfigDir = configDir
+	// set debug based on flag from above
+	config.DebugMode = *verbose
+	// build file paths based on relevent directories
+	config.LogFile = fmt.Sprintf("%v/%v", config.LogDir, config.LogFile)
+	config.CounterFile = fmt.Sprintf("%v/%v", config.ConfigDir, config.CounterFile)
+	config.TlsCrt = fmt.Sprintf("%v/%v", config.ConfigDir, config.TlsCrt)
+	config.TlsKey = fmt.Sprintf("%v/%v", config.ConfigDir, config.TlsKey)
+
 	return config
 }

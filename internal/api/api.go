@@ -23,7 +23,6 @@ import (
 func Start() {
 	// load configuration file
 	config := config.LoadConfig()
-	config.Init()
 
 	// enable logging to file
 	logging.StartLogging(config.LogFile)
