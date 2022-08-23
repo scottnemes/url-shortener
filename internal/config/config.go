@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -41,6 +42,10 @@ func (c *Configuration) Init() {
 	c.CounterFile = fmt.Sprintf("%v/%v", c.ConfigDir, c.CounterFile)
 	c.TlsCrt = fmt.Sprintf("%v/%v", c.ConfigDir, c.TlsCrt)
 	c.TlsKey = fmt.Sprintf("%v/%v", c.ConfigDir, c.TlsKey)
+	// process flags
+	verbose := flag.Bool("v", false, "Enable debug output")
+	flag.Parse()
+	c.DebugMode = *verbose
 }
 
 const (
