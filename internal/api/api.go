@@ -312,7 +312,7 @@ func Start() {
 	// start server in goroutine to allow graceful shutdown
 	go func() {
 		if err := srv.ListenAndServeTLS(config.TlsCrt, config.TlsKey); err != nil && errors.Is(err, http.ErrServerClosed) {
-			log.Printf("Listen: %s\n", err)
+			log.Printf("%s", err)
 		}
 	}()
 
@@ -327,8 +327,8 @@ func Start() {
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatalf("Error shutting down server (%v).", err)
+		log.Fatalf("Error shutting down server (%v)", err)
 	}
 
-	log.Println("Server exiting.")
+	log.Println("Server shutdown complete")
 }
