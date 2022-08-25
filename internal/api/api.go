@@ -20,6 +20,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+/*
+	Main function for the application. Contains all of the logic required to load configuration, start logging, and start the API.
+*/
 func Start() {
 	// load configuration file
 	config := config.LoadConfig()

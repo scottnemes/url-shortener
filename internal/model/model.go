@@ -12,6 +12,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
+/*
+	Holds all of the details necessary to work with a given URL.
+*/
 type Url struct {
 	Slug    string `bson:"slug" json:"slug"`
 	Target  string `bson:"target" json:"target"`
@@ -19,6 +22,9 @@ type Url struct {
 	Hits    uint64 `bson:"hits" json:"hits"`
 }
 
+/*
+	Returns a valid database client for use by other functions.
+*/
 func GetDBClient(conn string) *mongo.Client {
 	/*
 		TODO:
@@ -51,6 +57,9 @@ func GetDBClient(conn string) *mongo.Client {
 	return client
 }
 
+/*
+	Inserts a new long URL into the database.
+*/
 func InsertUrl(f *os.File, debug bool, db string, dbCollection string, client *mongo.Client, url Url) error {
 	log.SetOutput(f)
 	collection := client.Database(db).Collection(dbCollection)
@@ -69,6 +78,9 @@ func InsertUrl(f *os.File, debug bool, db string, dbCollection string, client *m
 	return err
 }
 
+/*
+	Looks up the provided short URL slug in the database and returns the target URL.
+*/
 func GetUrl(f *os.File, debug bool, db string, dbCollection string, client *mongo.Client, slug string) (Url, error) {
 	log.SetOutput(f)
 	url := Url{}
@@ -95,6 +107,9 @@ func GetUrl(f *os.File, debug bool, db string, dbCollection string, client *mong
 	return url, err
 }
 
+/*
+	Returns all URLs stored in the database.
+*/
 func GetUrls(f *os.File, debug bool, db string, dbCollection string, client *mongo.Client) ([]Url, error) {
 	log.SetOutput(f)
 	urls := []Url{}
@@ -127,6 +142,9 @@ func GetUrls(f *os.File, debug bool, db string, dbCollection string, client *mon
 	return urls, err
 }
 
+/*
+	Looks up the provided short URL slug in the database and updates the target URL.
+*/
 func UpdateUrl(f *os.File, debug bool, db string, dbCollection string, client *mongo.Client, url Url) error {
 	log.SetOutput(f)
 	collection := client.Database(db).Collection(dbCollection)
@@ -149,6 +167,9 @@ func UpdateUrl(f *os.File, debug bool, db string, dbCollection string, client *m
 	return err
 }
 
+/*
+	Looks up the URL for the provided short URL slug and deletes the record.
+*/
 func DeleteUrl(f *os.File, debug bool, db string, dbCollection string, client *mongo.Client, slug string) error {
 	log.SetOutput(f)
 	collection := client.Database(db).Collection(dbCollection)
@@ -170,6 +191,9 @@ func DeleteUrl(f *os.File, debug bool, db string, dbCollection string, client *m
 	return err
 }
 
+/*
+	Updates the hit count for the given short URL slug.
+*/
 func UpdateUrlHits(f *os.File, debug bool, db string, dbCollection string, client *mongo.Client, slug string) error {
 	log.SetOutput(f)
 	collection := client.Database(db).Collection(dbCollection)

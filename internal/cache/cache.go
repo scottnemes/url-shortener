@@ -14,6 +14,9 @@ import (
 
 var ctx = context.Background()
 
+/*
+	Returns a valid cache client for use by other functions.
+*/
 func GetCacheClient(host string, port string, db int, pass string) *redis.Client {
 	cacheClient := redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%v:%v", host, port),
@@ -23,6 +26,9 @@ func GetCacheClient(host string, port string, db int, pass string) *redis.Client
 	return cacheClient
 }
 
+/*
+	Checks the cache for the provided short URL slug and returns the target URL if available.
+*/
 func GetCachedUrl(f *os.File, debug bool, client *redis.Client, slug string) model.Url {
 	log.SetOutput(f)
 	url := model.Url{}
@@ -48,6 +54,9 @@ func GetCachedUrl(f *os.File, debug bool, client *redis.Client, slug string) mod
 	return url
 }
 
+/*
+	Adds or updates the target URL in the cache based on the provided short URL slug.
+*/
 func SetCachedUrl(f *os.File, debug bool, expireHours time.Duration, client *redis.Client, url model.Url) {
 	log.SetOutput(f)
 	json, err := json.Marshal(url)
@@ -64,6 +73,9 @@ func SetCachedUrl(f *os.File, debug bool, expireHours time.Duration, client *red
 	}
 }
 
+/*
+	Removes the cached URL record for the provided short URL slug if present.
+*/
 func DeleteCachedUrl(f *os.File, debug bool, client *redis.Client, slug string) {
 	log.SetOutput(f)
 	err := client.Del(ctx, slug).Err()

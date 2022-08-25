@@ -38,6 +38,10 @@ type Configuration struct {
 	CacheExpireHours time.Duration
 }
 
+/*
+	Processes initial command line flags. Loads configuration from disk, with the option to override the default config file with the -config command.
+	Sets initial values for multiple variables that require a path in order to use the passed in config file if applicable.
+*/
 func LoadConfig() Configuration {
 	var configDir string
 	// process flags
