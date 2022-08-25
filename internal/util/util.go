@@ -10,7 +10,6 @@ import (
 	"strings"
 	"sync"
 
-	"example.com/url-shortener/internal/logging"
 	"example.com/url-shortener/internal/model"
 )
 
@@ -20,7 +19,7 @@ type Counter struct {
 	Mu         sync.Mutex
 }
 
-func (c *Counter) GetAndIncrease(debug bool) (uint64, uint64) {
+func (c *Counter) GetAndIncrease(f *os.File, debug bool) (uint64, uint64) {
 	c.Mu.Lock()
 	defer c.Mu.Unlock()
 	curCounter := c.Counter
@@ -30,16 +29,17 @@ func (c *Counter) GetAndIncrease(debug bool) (uint64, uint64) {
 	if curCounter < curCounterEnd {
 		c.Counter += 1
 	} else {
-		c.GetNewRange(debug)
+		c.GetNewRange(f, debug)
 	}
 	return curCounter, curCounterEnd
 }
 
-func (c *Counter) GetNewRange(debug bool) (uint64, uint64) {
+func (c *Counter) GetNewRange(f *os.File, debug bool) (uint64, uint64) {
 	/*
 		TODO:
-		1. query ZooKeeper to get next available counter range
+		1. query ZooKeeper/etcd to get next available counter range
 	*/
+	log.SetOutput(f)
 	c.Mu.Lock()
 	defer c.Mu.Unlock()
 	c.Counter, c.CounterEnd = 1000000, 2000000
@@ -51,8 +51,8 @@ func (c *Counter) GetNewRange(debug bool) (uint64, uint64) {
 	return c.Counter, c.CounterEnd
 }
 
-func LoadCounterRange(debug bool, fileName string) (uint64, uint64) {
-	log.SetOutput(logging.F)
+func LoadCounterRange(f *os.File, debug bool, fileName string) (uint64, uint64) {
+	log.SetOutput(f)
 	data, err := os.ReadFile(fileName)
 	if err != nil {
 		log.Fatalln(err)
@@ -83,8 +83,8 @@ func LoadCounterRange(debug bool, fileName string) (uint64, uint64) {
 	return uint64(counter), uint64(counterEnd)
 }
 
-func SaveCounterRange(debug bool, fileName string, c *Counter) {
-	log.SetOutput(logging.F)
+func SaveCounterRange(f *os.File, debug bool, fileName string, c *Counter) {
+	log.SetOutput(f)
 	f, err := os.Create(fileName)
 	if err != nil {
 		log.Printf("Error saving counter range file: %v", err)
@@ -105,13 +105,14 @@ func FileExists(fileName string) bool {
 	return true
 }
 
-func GenerateUrlSlug(debug bool, c *Counter) string {
+func GenerateUrlSlug(f *os.File, debug bool, c *Counter) string {
+	log.SetOutput(f)
 	base := uint64(62)
 	characterSet := "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 	slug := ""
 
 	// uses mutex to get a unique counter value
-	counter, _ := c.GetAndIncrease(debug)
+	counter, _ := c.GetAndIncrease(f, debug)
 
 	for counter > 0 {
 		r := counter % base

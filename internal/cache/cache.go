@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
-	"example.com/url-shortener/internal/logging"
 	"example.com/url-shortener/internal/model"
 	"github.com/go-redis/redis/v9"
 )
@@ -23,8 +23,8 @@ func GetCacheClient(host string, port string, db int, pass string) *redis.Client
 	return cacheClient
 }
 
-func GetCachedUrl(debug bool, client *redis.Client, slug string) model.Url {
-	log.SetOutput(logging.F)
+func GetCachedUrl(f *os.File, debug bool, client *redis.Client, slug string) model.Url {
+	log.SetOutput(f)
 	url := model.Url{}
 	result, err := client.Get(ctx, slug).Result()
 	if err == redis.Nil {
@@ -48,8 +48,8 @@ func GetCachedUrl(debug bool, client *redis.Client, slug string) model.Url {
 	return url
 }
 
-func SetCachedUrl(debug bool, expireHours time.Duration, client *redis.Client, url model.Url) {
-	log.SetOutput(logging.F)
+func SetCachedUrl(f *os.File, debug bool, expireHours time.Duration, client *redis.Client, url model.Url) {
+	log.SetOutput(f)
 	json, err := json.Marshal(url)
 	if err != nil {
 		log.Printf("Error marshalling cached URL (slug: %v) (%v)", url.Slug, err)
@@ -64,8 +64,8 @@ func SetCachedUrl(debug bool, expireHours time.Duration, client *redis.Client, u
 	}
 }
 
-func DeleteCachedUrl(debug bool, client *redis.Client, slug string) {
-	log.SetOutput(logging.F)
+func DeleteCachedUrl(f *os.File, debug bool, client *redis.Client, slug string) {
+	log.SetOutput(f)
 	err := client.Del(ctx, slug).Err()
 	if err != nil && err != redis.Nil {
 		log.Printf("Error deleting cached URL (slug: %v) (%v)", slug, err)

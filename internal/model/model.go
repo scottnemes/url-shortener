@@ -3,9 +3,9 @@ package model
 import (
 	"context"
 	"log"
+	"os"
 	"time"
 
-	"example.com/url-shortener/internal/logging"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -51,8 +51,8 @@ func GetDBClient(conn string) *mongo.Client {
 	return client
 }
 
-func InsertUrl(debug bool, db string, dbCollection string, client *mongo.Client, url Url) error {
-	log.SetOutput(logging.F)
+func InsertUrl(f *os.File, debug bool, db string, dbCollection string, client *mongo.Client, url Url) error {
+	log.SetOutput(f)
 	collection := client.Database(db).Collection(dbCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -69,8 +69,8 @@ func InsertUrl(debug bool, db string, dbCollection string, client *mongo.Client,
 	return err
 }
 
-func GetUrl(debug bool, db string, dbCollection string, client *mongo.Client, slug string) (Url, error) {
-	log.SetOutput(logging.F)
+func GetUrl(f *os.File, debug bool, db string, dbCollection string, client *mongo.Client, slug string) (Url, error) {
+	log.SetOutput(f)
 	url := Url{}
 	collection := client.Database(db).Collection(dbCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -95,8 +95,8 @@ func GetUrl(debug bool, db string, dbCollection string, client *mongo.Client, sl
 	return url, err
 }
 
-func GetUrls(debug bool, db string, dbCollection string, client *mongo.Client) ([]Url, error) {
-	log.SetOutput(logging.F)
+func GetUrls(f *os.File, debug bool, db string, dbCollection string, client *mongo.Client) ([]Url, error) {
+	log.SetOutput(f)
 	urls := []Url{}
 	collection := client.Database(db).Collection(dbCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -127,8 +127,8 @@ func GetUrls(debug bool, db string, dbCollection string, client *mongo.Client) (
 	return urls, err
 }
 
-func UpdateUrl(debug bool, db string, dbCollection string, client *mongo.Client, url Url) error {
-	log.SetOutput(logging.F)
+func UpdateUrl(f *os.File, debug bool, db string, dbCollection string, client *mongo.Client, url Url) error {
+	log.SetOutput(f)
 	collection := client.Database(db).Collection(dbCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -149,8 +149,8 @@ func UpdateUrl(debug bool, db string, dbCollection string, client *mongo.Client,
 	return err
 }
 
-func DeleteUrl(debug bool, db string, dbCollection string, client *mongo.Client, slug string) error {
-	log.SetOutput(logging.F)
+func DeleteUrl(f *os.File, debug bool, db string, dbCollection string, client *mongo.Client, slug string) error {
+	log.SetOutput(f)
 	collection := client.Database(db).Collection(dbCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -170,8 +170,8 @@ func DeleteUrl(debug bool, db string, dbCollection string, client *mongo.Client,
 	return err
 }
 
-func UpdateUrlHits(debug bool, db string, dbCollection string, client *mongo.Client, slug string) error {
-	log.SetOutput(logging.F)
+func UpdateUrlHits(f *os.File, debug bool, db string, dbCollection string, client *mongo.Client, slug string) error {
+	log.SetOutput(f)
 	collection := client.Database(db).Collection(dbCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
