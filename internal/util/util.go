@@ -24,6 +24,22 @@ type Counter struct {
 }
 
 /*
+	Returns a counter range to use for URL slug creation.
+*/
+func (c *Counter) GetNewRange(f *os.File, debug bool) {
+	/*
+		TODO:
+		1. query ZooKeeper/etcd to get next available counter range
+	*/
+	log.SetOutput(f)
+	c.Counter, c.CounterEnd = 1000000, 2000000
+
+	if debug {
+		log.Printf("[DEBUG] Generated new counter range (%v through %v)", c.Counter, c.CounterEnd)
+	}
+}
+
+/*
 	Gets a counter value for use in URL slug creation, and then increases the counter.
 	If the current counter range (i.e. 1000000-2000000) is exhausted, it grabs a new range.
 */
@@ -43,30 +59,10 @@ func (c *Counter) GetAndIncrease(f *os.File, debug bool) (uint64, uint64) {
 }
 
 /*
-	Returns a counter range to use for URL slug creation.
-*/
-func (c *Counter) GetNewRange(f *os.File, debug bool) (uint64, uint64) {
-	/*
-		TODO:
-		1. query ZooKeeper/etcd to get next available counter range
-	*/
-	log.SetOutput(f)
-	c.Mu.Lock()
-	defer c.Mu.Unlock()
-	c.Counter, c.CounterEnd = 1000000, 2000000
-
-	if debug {
-		log.Printf("[DEBUG] Generated new counter range (%v through %v)", c.Counter, c.CounterEnd)
-	}
-
-	return c.Counter, c.CounterEnd
-}
-
-/*
 	In order to reduce wasted counter ranges, on a graceful server exit the current counter range is saved to a file.
 	On the next server start up, the counter range is loaded and then the file is deleted to prevent re-using an old range.
 */
-func LoadCounterRange(f *os.File, debug bool, fileName string) (uint64, uint64) {
+func (c *Counter) LoadCounterRange(f *os.File, debug bool, fileName string) {
 	log.SetOutput(f)
 	data, err := os.ReadFile(fileName)
 	if err != nil {
@@ -84,6 +80,8 @@ func LoadCounterRange(f *os.File, debug bool, fileName string) (uint64, uint64) 
 		log.Fatalln(err)
 	}
 
+	c.Counter, c.CounterEnd = uint64(counter), uint64(counterEnd)
+
 	// delete counter range file after loading
 	// prevents loading inconsistent range after crash
 	err = os.Remove(fileName)
@@ -94,14 +92,12 @@ func LoadCounterRange(f *os.File, debug bool, fileName string) (uint64, uint64) 
 	if debug {
 		log.Printf("[DEBUG] Loaded counter range from file (%v through %v)", counter, counterEnd)
 	}
-
-	return uint64(counter), uint64(counterEnd)
 }
 
 /*
 	On a graceful server shutdown, the current counter range is saved to disk for future use.
 */
-func SaveCounterRange(f *os.File, debug bool, fileName string, c *Counter) {
+func (c *Counter) SaveCounterRange(f *os.File, debug bool, fileName string) {
 	log.SetOutput(f)
 	f, err := os.Create(fileName)
 	if err != nil {

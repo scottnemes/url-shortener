@@ -2,7 +2,6 @@ package config
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -42,19 +41,11 @@ type Configuration struct {
 	Processes initial command line flags. Loads configuration from disk, with the option to override the default config file with the -config command.
 	Sets initial values for multiple variables that require a path in order to use the passed in config file if applicable.
 */
-func LoadConfig() Configuration {
-	var configDir string
-	// process flags
-	verbose := flag.Bool("v", false, "Enable debug output")
-	flag.StringVar(&configDir, "config", "", "Path to configuration directory")
-	flag.Parse()
-
+func LoadConfig(configFileName string, verbose *bool) Configuration {
 	// if no config dir is provided, set a default to load
-	if configDir == "" {
-		configDir = "/etc/url_shortener"
+	if configFileName == "" {
+		configFileName = "/etc/url_shortener/url_shortener.conf"
 	}
-
-	configFileName := fmt.Sprintf("%v/url_shortener.conf", configDir)
 
 	// open and decode configuration file
 	configFile, err := os.Open(configFileName)
@@ -70,8 +61,6 @@ func LoadConfig() Configuration {
 		log.Fatal(err)
 	}
 
-	// persist config dir in case one was passed in
-	config.ConfigDir = configDir
 	// set debug based on flag from above
 	config.DebugMode = *verbose
 	// build file paths based on relevent directories

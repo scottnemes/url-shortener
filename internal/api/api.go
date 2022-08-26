@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -24,8 +25,14 @@ import (
 	Main function for the application. Contains all of the logic required to load configuration, start logging, and start the API.
 */
 func Start() {
+	var configFileName string
+	// process flags
+	verbose := flag.Bool("v", false, "Enable debug output")
+	flag.StringVar(&configFileName, "config", "", "Path to configuration directory")
+	flag.Parse()
+
 	// load configuration file
-	config := config.LoadConfig()
+	config := config.LoadConfig(configFileName, verbose)
 
 	// enable logging to file
 	f := logging.StartLogging(config.LogFile)
@@ -38,12 +45,12 @@ func Start() {
 	// if not, get a new range
 	cnt := util.Counter{}
 	if util.FileExists(config.CounterFile) {
-		cnt.Counter, cnt.CounterEnd = util.LoadCounterRange(f, config.DebugMode, config.CounterFile)
+		cnt.LoadCounterRange(f, config.DebugMode, config.CounterFile)
 	} else {
-		cnt.Counter, cnt.CounterEnd = cnt.GetNewRange(f, config.DebugMode)
+		cnt.GetNewRange(f, config.DebugMode)
 	}
 	// save counter range to file on non-fatal exit
-	defer util.SaveCounterRange(f, config.DebugMode, config.CounterFile, &cnt)
+	defer cnt.SaveCounterRange(f, config.DebugMode, config.CounterFile)
 
 	dbClient := model.GetDBClient(config.DBConnString)
 	// close the database connection before exit
