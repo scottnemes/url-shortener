@@ -98,7 +98,7 @@ func Start() {
 			return
 		}
 		// check if target URL is valid
-		if !util.IsValidUrl(url) {
+		if !util.IsValidUrl(url.Target) {
 			gc.JSON(http.StatusBadRequest, gin.H{
 				"status":  http.StatusBadRequest,
 				"message": "Invalid URL for shortening.",
@@ -238,7 +238,7 @@ func Start() {
 			return
 		}
 		// check if target URL is valid
-		if !util.IsValidUrl(url) {
+		if !util.IsValidUrl(url.Target) {
 			gc.JSON(http.StatusBadRequest, gin.H{
 				"status":  http.StatusBadRequest,
 				"message": "Invalid URL for updating.",

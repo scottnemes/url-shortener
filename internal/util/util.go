@@ -9,8 +9,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-
-	"example.com/url-shortener/internal/model"
 )
 
 /*
@@ -138,7 +136,6 @@ func GenerateUrlSlug(f *os.File, debug bool, c *Counter) string {
 		r := counter % base
 		counter /= base
 		slug = string(characterSet[r]) + slug
-
 	}
 	return slug
 }
@@ -147,7 +144,7 @@ func GenerateUrlSlug(f *os.File, debug bool, c *Counter) string {
 	Checks if the provided slug is base62 and the correct length.
 */
 func IsValidSlug(maxSlugLen int, slug string) bool {
-	re := fmt.Sprintf("^[A-Za-z0-9]{0,%v}$", maxSlugLen)
+	re := fmt.Sprintf("^[A-Za-z0-9]{1,%v}$", maxSlugLen)
 	isBase62 := regexp.MustCompile(re).MatchString
 	return isBase62(slug)
 }
@@ -155,8 +152,8 @@ func IsValidSlug(maxSlugLen int, slug string) bool {
 /*
 	Checks if the provided URL is valid.
 */
-func IsValidUrl(u model.Url) bool {
-	_, err := url.ParseRequestURI(u.Target)
+func IsValidUrl(u string) bool {
+	_, err := url.ParseRequestURI(u)
 	if err != nil {
 		return false
 	} else {
