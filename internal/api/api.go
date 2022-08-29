@@ -147,7 +147,7 @@ func Start() {
 		// if found, return
 		// if not found, continue on to check the database
 		if config.CacheEnabled {
-			url := cache.GetCachedUrl(f, config.DebugMode, cacheClient, slug)
+			url, _ := cache.GetCachedUrl(f, config.DebugMode, cacheClient, slug)
 			if url.Target != "" {
 				// update the hit count for the given short URL
 				err := model.UpdateUrlHits(f, config.DebugMode, config.DBDatabase, config.DBCollection, dbClient, slug)
@@ -180,7 +180,7 @@ func Start() {
 
 			// URL is not in cache, so add it
 			if config.CacheEnabled {
-				cache.SetCachedUrl(f, config.DebugMode, config.CacheExpireHours, cacheClient, url)
+				_ = cache.SetCachedUrl(f, config.DebugMode, config.CacheExpireHours, cacheClient, url)
 			}
 
 			gc.JSON(http.StatusOK, gin.H{
